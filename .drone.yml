@@ -1,0 +1,26 @@
+kind: pipeline
+type: docker
+name: default
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+  steps:
+    - name: test
+      image: golang
+      commands:
+        - go test
+        - go build
+
+
+
+
+
+#  - name: Test
+#    image: alpine
+#    commands:
+#      - cd /usr/local
+#      - curl -L https://dl.dagger.io/dagger/install.sh | sudo sh
+#      - cd -
