@@ -11,6 +11,7 @@ steps:
     image: golang:alpine
     commands:
       - apk add curl docker openrc --no-cache
+      - dockerd
       - cd /usr/local
       - curl -L https://dl.dagger.io/dagger/install.sh | sh
       - cd -
