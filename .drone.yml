@@ -10,6 +10,7 @@ steps:
   - name: lint
     image: golang:alpine
     commands:
+      - apk add curl
       - curl -L https://dl.dagger.io/dagger/install.sh | sh
       - dagger do lint --log-format plain
 
