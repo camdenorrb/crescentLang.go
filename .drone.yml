@@ -10,7 +10,8 @@ steps:
   - name: lint
     image: golang:alpine
     commands:
-      - apk add --update curl docker openrc sudo --no-cache
+      - apk add --update curl docker openrc --no-cache
+      - dockerd
       - cd /usr/local
       - curl -L https://dl.dagger.io/dagger/install.sh | sh
       - cd -
