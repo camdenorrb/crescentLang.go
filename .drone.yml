@@ -8,6 +8,7 @@ platform:
 
 steps:
   - name: lint
+    pull: never
     image: crescent-lang:latest
     commands:
       - apk add --update curl docker openrc --no-cache
