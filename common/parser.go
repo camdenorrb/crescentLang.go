@@ -1,4 +1,4 @@
-package global
+package common
 
 import (
 	"github.com/emirpasic/gods/sets"
@@ -11,6 +11,7 @@ type Pattern = []sets.Set
 type Parser struct {
 	nodes []Node
 	index uint
+	syntax Syntax
 }
 
 type Scope struct {
@@ -28,5 +29,6 @@ func (p *Parser) Parse(tokens []Token) []ast.Node {
 	for _, token := range tokens {
 		token.
 	}
+
 	ast.Node()
 }

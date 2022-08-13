@@ -1,8 +1,8 @@
 package crescent
 
-import "crescentLang/global"
+import "crescentLang/common"
 
-func Lex() []global.Token {
+func Lex() []common.Token {
 
 }
 

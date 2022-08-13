@@ -1,4 +1,4 @@
-package global
+package common
 
 // AST that can be used by any language for conversion purposes
 

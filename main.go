@@ -1,13 +1,13 @@
 package main
 
 import (
-	"crescentLang/global"
+	"crescentLang/common"
 	"fmt"
 )
 
 func main() {
 
-	fmt.Println(global.Visibility("Meow"))
+	fmt.Println(common.Visibility("Meow"))
 	/*
 		thing := token.Operator("")
 

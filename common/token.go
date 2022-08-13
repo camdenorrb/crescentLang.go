@@ -1,4 +1,4 @@
-package global
+package common
 
 // Parser would essentially be a big switch statement in this case
 

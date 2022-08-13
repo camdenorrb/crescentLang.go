@@ -1,8 +1,12 @@
 package crescent
 
-import "crescentLang/global"
+import "crescentLang/common"
 
 const (
-	VisibilityPublic  global.Visibility = "public"
-	VisibilityPrivate global.Visibility = "private"
+	VisibilityPublic  common.Visibility = "public"
+	VisibilityPrivate common.Visibility = "private"
 )
+
+func ()  {
+	
+}

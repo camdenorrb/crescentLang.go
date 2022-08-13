@@ -1,12 +1,12 @@
 package crescent
 
 import (
-	"crescentLang/global"
+	"crescentLang/common"
 	"github.com/emirpasic/gods/sets/linkedhashset"
 )
 
 const (
-	NOT global.TokenType = iota
+	NOT common.TokenType = iota
 	EQUALS
 	SEMICOLON
 	TYPE_PREFIX

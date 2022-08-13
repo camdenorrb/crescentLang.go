@@ -7,11 +7,20 @@ platform:
   arch: amd64
 
 steps:
+
+  - name: lint
+    image: golang:alpine
+    commands:
+      - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+      - golang-ci lint run
+
   - name: test
-    image: golang
+    image: golang:alpine
     commands:
       - go test
       - go build
+      - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+      - golang-ci lint run
 
 
 
