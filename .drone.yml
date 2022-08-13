@@ -14,7 +14,7 @@ steps:
       - cd /usr/local
       - curl -L https://dl.dagger.io/dagger/install.sh | sh
       - cd -
-      - dagger do lint --log-format plain
+      - sudo dagger do lint --log-format plain
 
 
 
