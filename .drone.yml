@@ -8,7 +8,7 @@ platform:
 
 steps:
   - name: lint
-    image: golang:alpine
+    image: crescent-lang:latest
     commands:
       - apk add --update curl docker openrc --no-cache
       - dockerd
