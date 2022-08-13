@@ -11,6 +11,7 @@ steps:
     image: golang:alpine
     commands:
       - apk add curl
+      - cd /usr/local
       - curl -L https://dl.dagger.io/dagger/install.sh | sh
       - dagger do lint --log-format plain
 
