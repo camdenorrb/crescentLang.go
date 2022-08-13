@@ -11,6 +11,7 @@ steps:
   - name: lint
     image: golang:alpine
     commands:
+      - apk add build-base
       - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
       - golang-ci lint run
 
