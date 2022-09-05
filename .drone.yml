@@ -1,17 +1,29 @@
-kind: pipeline
-type: exec
-name: create-image
-
-steps:
-  - name: create
-    commands:
-      - make build-image
-
----
+#kind: pipeline
+#type: exec
+#name: create-image
+#
+#steps:
+#  - name: create
+#    commands:
+#      - make build-image
+#
+#---
 
 kind: pipeline
 type: docker
 name: default
+
+services:
+  - name: docker
+    image: crescent-lang:latest
+    privileged: true
+    volumes:
+      - name: dockersock
+        path: /var/run
+
+volumes:
+  - name: dockersock
+    temp: {}
 
 steps:
   - name: lint
