@@ -1,17 +1,22 @@
 package common
 
 import (
-	"github.com/markphelps/optional"
+	"github.com/moznion/go-optional"
 )
+
+type KeyTokenTypes struct {
+	IdentifierTokenType TokenType
+	CharTokenType       TokenType
+	StringTokenType     TokenType
+	DotTokenType TokenType
+}
 
 // Syntax should define how to go from Token -> AST and AST -> Token
 type Syntax struct {
-	identifierTokenType          TokenType
-	identifierCharacterValidator func(rune) bool
-	tokenTypes                   map[string]TokenType
-	commentPrefix                optional.String
-	stringWrapper                rune
-	charWrapper                  rune
+	KeyTokenTypes
+	tokenTypes             map[string]TokenType
+	commentPrefix          optional.Option[string]
+	multiLineCommentSyntax optional.Option[MultiLineCommentSyntax]
 }
 
 type MultiLineCommentSyntax struct {
