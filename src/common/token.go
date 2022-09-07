@@ -4,15 +4,15 @@ package common
 
 type TokenType = uint8
 
-// UIntRange is treated as inclusive
-type UIntRange struct {
-	Start uint
-	End   uint
+// IntRange is treated as inclusive
+type IntRange struct {
+	Start int
+	End   int
 }
 
 type Token struct {
-	Value       interface{}
-	ColumnRange UIntRange
+	Value       any
+	ColumnRange IntRange
 	LineNumber  uint
 	Type        TokenType
 }

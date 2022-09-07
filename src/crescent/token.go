@@ -2,7 +2,6 @@ package crescent
 
 import (
 	"crescentLang/common"
-	"github.com/emirpasic/gods/sets/linkedhashset"
 )
 
 const (
@@ -111,8 +110,10 @@ const (
 	COMMA
 	DOT
 	IMPORT_SEPARATOR
+	IDENTIFIER
 )
 
+/*
 var tokenTypes = linkedhashset.New(
 
 	"!",
@@ -205,4 +206,5 @@ var tokenTypes = linkedhashset.New(
 	",",
 	".",
 	"::",
-)
+}
+*/

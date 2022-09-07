@@ -1,3 +1,3 @@
 #!/bin/sh
-set -- sh "$(which dind)" "$@"
-exec "$@"
+# set -- sh "$(which dind)" "$@"
+# exec "$@"
