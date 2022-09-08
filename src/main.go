@@ -2,29 +2,38 @@ package main
 
 import (
 	"fmt"
-	"sync"
-	"unicode"
+	"go.uber.org/zap"
+	"time"
 )
 
 func main() {
 
-	fmt.Println(unicode.IsNumber('1'))
+	/*
+		fmt.Println(unicode.IsNumber('1'))
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	//fmt.Println(common.Visibility("Meow"))
-	c := make(chan string)
+		var wg sync.WaitGroup
+		wg.Add(1)
+		//fmt.Println(common.Visibility("Meow"))
+		c := make(chan string)
 
-	go func() {
-		thing(c)
-		wg.Done()
-	}()
-	c <- "Meow"
-	c <- "Meow"
-	close(c)
+		go func() {
+			thing(c)
+			wg.Done()
+		}()
+		c <- "Meow"
+		c <- "Meow"
+		close(c)
 
-	wg.Wait()
-	//
+		wg.Wait()
+	*/
+
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
+	logger.Info("failed to fetch URL",
+		// Structured context as strongly typed Field values.
+		zap.Int("attempt", 3),
+		zap.Duration("backoff", time.Second),
+	) //
 
 	/*
 		thing := token.Operator("")
