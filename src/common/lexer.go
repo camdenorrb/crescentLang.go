@@ -3,6 +3,7 @@ package common
 import (
 	"bufio"
 	"io"
+	"strings"
 	"unicode"
 )
 
@@ -49,57 +50,57 @@ func (l *GenericLexer) lexLine(line string, lineNumber uint) ([]Token, error) {
 
 	var tokens []Token
 
-	var builder string
+	var builder strings.Builder
 	var builderType BuilderType
 
 	for index, character := range []rune(line) {
 
 		wasNumber := false
 
-		if builder != "" {
+		if builder.Len() != 0 && (builderType == KeywordBuilderType || builderType == SymbolBuilderType) {
 			// If matching token type is found, store token
-			if tokenType, exists := l.syntax.tokenTypes[builder]; exists {
+			if tokenType, exists := l.syntax.tokenTypes[builder.String()]; exists {
 
 				tokens = append(tokens, Token{
-					ColumnRange: IntRange{Start: index - len(builder), End: index},
+					ColumnRange: IntRange{Start: index - builder.Len(), End: index},
 					LineNumber:  lineNumber,
 					Type:        tokenType,
 				})
 
-				builder = ""
+				builder.Reset()
 				builderType = UnsetBuilderType
 			} else if builderType == KeywordBuilderType {
 
 				if unicode.IsLetter(character) {
-					builder += string(character)
+					builder.WriteRune(character)
 					continue
 				}
 
 				tokens = append(tokens, Token{
-					Value:       builder,
-					ColumnRange: IntRange{Start: index - len(builder), End: index},
+					Value:       builder.String(),
+					ColumnRange: IntRange{Start: index - builder.Len(), End: index},
 					LineNumber:  lineNumber,
 					Type:        l.syntax.IdentifierTokenType,
 				})
 
-				builder = ""
+				builder.Reset()
+				builderType = UnsetBuilderType
 			}
 		}
 
 		switch character {
 
 		case '"':
-
 			if builderType == StringBuilderType {
 
 				tokens = append(tokens, Token{
-					Value:       builder,
-					ColumnRange: IntRange{Start: index - len(builder) - len("\""), End: index},
+					Value:       builder.String(),
+					ColumnRange: IntRange{Start: index - builder.Len() - len("\""), End: index},
 					LineNumber:  lineNumber,
 					Type:        l.syntax.StringTokenType,
 				})
 
-				builder = ""
+				builder.Reset()
 				builderType = UnsetBuilderType
 			} else {
 				builderType = StringBuilderType
@@ -109,13 +110,13 @@ func (l *GenericLexer) lexLine(line string, lineNumber uint) ([]Token, error) {
 			if builderType == CharBuilderType {
 
 				tokens = append(tokens, Token{
-					Value:       builder,
-					ColumnRange: IntRange{Start: index - len(builder) - len("'"), End: index},
+					Value:       builder.String(),
+					ColumnRange: IntRange{Start: index - builder.Len() - len("'"), End: index},
 					LineNumber:  lineNumber,
 					Type:        l.syntax.CharTokenType,
 				})
 
-				builder = ""
+				builder.Reset()
 				builderType = UnsetBuilderType
 			} else {
 				builderType = CharBuilderType
@@ -129,7 +130,7 @@ func (l *GenericLexer) lexLine(line string, lineNumber uint) ([]Token, error) {
 					Type:        l.syntax.DotTokenType,
 				})
 			} else {
-				builder += "."
+				builder.WriteRune(character)
 				wasNumber = true
 			}
 
@@ -139,45 +140,56 @@ func (l *GenericLexer) lexLine(line string, lineNumber uint) ([]Token, error) {
 			// If there is a hanging dot, remove token and add to number
 			if len(tokens) > 0 && tokens[len(tokens)-1].Type == l.syntax.DotTokenType {
 				tokens = tokens[:len(tokens)-1]
-				builder += "."
+				builder.WriteRune('.')
 			}
 
-			builder += string(character)
+			builder.WriteRune(character)
 			wasNumber = true
 
 		default:
+
+			switch builderType {
+
+			case KeywordBuilderType:
+
+			case SymbolBuilderType:
+
+			case NumberBuilderType:
+
+			}
 			if unicode.IsLetter(character) {
-				builder += string(character)
+				builder.WriteRune(character)
 				builderType = KeywordBuilderType
 			} else {
-				builder += string(character)
+				builder.WriteRune(character)
 				builderType = SymbolBuilderType
 			}
 		}
 
-		if builderType == NumberBuilderType && !wasNumber && builder != "" {
+		if builderType == NumberBuilderType && !wasNumber && builder.Len() > 0 {
 			// TODO: Store number as token
-			builder = ""
+			// TODO: Account for a number with `f` as the suffix to be float
+			builder.Reset()
 			builderType = UnsetBuilderType
 		}
 
 	}
 
 	// Must be identifier
-	if builder != "" {
+	if builder.Len() > 0 {
 
 		switch builderType {
 		// TODO: Switch between types
 		}
 
 		tokens = append(tokens, Token{
-			Value:       builder,
-			ColumnRange: IntRange{Start: len(line) - len(builder) - 1, End: len(line) - 1},
+			Value:       builder.String(),
+			ColumnRange: IntRange{Start: len(line) - builder.Len() - 1, End: len(line) - 1},
 			LineNumber:  lineNumber,
 			Type:        l.syntax.IdentifierTokenType,
 		})
 
-		builder = ""
+		builder.Reset()
 		builderType = UnsetBuilderType
 	}
 

@@ -1,10 +1,8 @@
 package common
 
 import (
-	"github.com/markphelps/optional"
 	"reflect"
 	"testing"
-	"unicode"
 )
 
 func TestGenericLexer_lexLine(t *testing.T) {
@@ -29,14 +27,7 @@ func TestGenericLexer_lexLine(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			l := NewGenericLexer(nil, &Syntax{
-				identifierTokenType:          0,
-				identifierCharacterValidator: unicode.IsLetter,
-				tokenTypes:                   nil,
-				commentPrefix:                optional.String{},
-				stringWrapper:                0,
-				charWrapper:                  0,
-			})
+			l := NewGenericLexer(nil, &Syntax{})
 			got, err := l.lexLine(tt.args.line, tt.args.lineNumber)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("lexLine() error = %v, wantErr %v", err, tt.wantErr)
