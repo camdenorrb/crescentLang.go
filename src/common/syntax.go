@@ -8,7 +8,6 @@ type KeyTokenTypes struct {
 	IdentifierTokenType TokenType
 	CharTokenType       TokenType
 	StringTokenType     TokenType
-	DotTokenType TokenType
 }
 
 // Syntax should define how to go from Token -> AST and AST -> Token

@@ -2,33 +2,11 @@ package common
 
 import (
 	"bufio"
+	"errors"
 	"io"
 	"strings"
 	"unicode"
 )
-
-type Position struct {
-	line   uint
-	column uint
-}
-
-type Lexer interface {
-	Lex(lines chan string) []Token
-}
-
-type GenericLexer struct {
-	reader *bufio.Reader
-	syntax *Syntax
-	pos    Position
-}
-
-func NewGenericLexer(reader io.Reader, syntax *Syntax) *GenericLexer {
-	return &GenericLexer{
-		reader: bufio.NewReader(reader),
-		syntax: syntax,
-		pos:    Position{line: 1, column: 0},
-	}
-}
 
 type BuilderType uint
 
@@ -43,6 +21,22 @@ const (
 	MultiLineCommentBuilderType
 )
 
+type Lexer interface {
+	Lex(lines chan string) []Token
+}
+
+type GenericLexer struct {
+	reader *bufio.Reader
+	syntax *Syntax
+}
+
+func NewGenericLexer(reader io.Reader, syntax *Syntax) *GenericLexer {
+	return &GenericLexer{
+		reader: bufio.NewReader(reader),
+		syntax: syntax,
+	}
+}
+
 // Plan: If syntax doesn't contain Rune, append and check again
 // Make sure to check if number, string literal, etc
 
@@ -54,8 +48,6 @@ func (l *GenericLexer) lexLine(line string, lineNumber uint) ([]Token, error) {
 	var builderType BuilderType
 
 	for index, character := range []rune(line) {
-
-		wasNumber := false
 
 		if builder.Len() != 0 && (builderType == KeywordBuilderType || builderType == SymbolBuilderType) {
 			// If matching token type is found, store token
@@ -122,64 +114,56 @@ func (l *GenericLexer) lexLine(line string, lineNumber uint) ([]Token, error) {
 				builderType = CharBuilderType
 			}
 
-		case '.':
-			if builderType != NumberBuilderType {
-				tokens = append(tokens, Token{
-					ColumnRange: IntRange{Start: index, End: index},
-					LineNumber:  lineNumber,
-					Type:        l.syntax.DotTokenType,
-				})
-			} else {
-				builder.WriteRune(character)
-				wasNumber = true
-			}
-
 		// Note: Negative numbers won't be lexed entirely, will be Minus token first
 		case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0':
 
-			// If there is a hanging dot, remove token and add to number
-			if len(tokens) > 0 && tokens[len(tokens)-1].Type == l.syntax.DotTokenType {
-				tokens = tokens[:len(tokens)-1]
-				builder.WriteRune('.')
+			// If dot alone it should be originally be parsed as a symbol, but if number present, change
+			if builderType != UnsetBuilderType && builder.String() != "." {
+				// Error
 			}
 
 			builder.WriteRune(character)
-			wasNumber = true
+			builderType = NumberBuilderType
 
 		default:
 
 			switch builderType {
 
 			case KeywordBuilderType:
-
+				if !unicode.IsLetter(character) {
+					// TODO: Error unexpected
+					return nil, errors.New("")
+				}
+				builder.WriteRune(character)
 			case SymbolBuilderType:
+				builder.WriteRune(character)
 
 			case NumberBuilderType:
+				// If `f` store as float
+				// Parse/Store number
+				// If error parsing as number, error
 
+				builder.Reset()
+				builderType = UnsetBuilderType
+
+			case UnsetBuilderType:
+				if unicode.IsLetter(character) {
+					builder.WriteRune(character)
+					builderType = KeywordBuilderType
+				} else {
+					builder.WriteRune(character)
+					builderType = SymbolBuilderType
+				}
 			}
-			if unicode.IsLetter(character) {
-				builder.WriteRune(character)
-				builderType = KeywordBuilderType
-			} else {
-				builder.WriteRune(character)
-				builderType = SymbolBuilderType
-			}
-		}
 
-		if builderType == NumberBuilderType && !wasNumber && builder.Len() > 0 {
-			// TODO: Store number as token
-			// TODO: Account for a number with `f` as the suffix to be float
-			builder.Reset()
-			builderType = UnsetBuilderType
 		}
-
 	}
 
 	// Must be identifier
 	if builder.Len() > 0 {
 
 		switch builderType {
-		// TODO: Switch between types
+		// TODO: Switch between types, maybe have a function for handling each one that can be reused in default case
 		}
 
 		tokens = append(tokens, Token{

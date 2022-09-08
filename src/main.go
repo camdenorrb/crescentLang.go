@@ -27,9 +27,9 @@ func main() {
 		wg.Wait()
 	*/
 
-	logger, _ := zap.NewProduction()
+	logger, _ := zap.NewDevelopment()
 	defer logger.Sync()
-	logger.Info("failed to fetch URL",
+	logger.Error("failed to fetch URL",
 		// Structured context as strongly typed Field values.
 		zap.Int("attempt", 3),
 		zap.Duration("backoff", time.Second),
