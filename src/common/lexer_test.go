@@ -1,7 +1,11 @@
 package common
 
 import (
+	"fmt"
+	"github.com/moznion/go-optional"
+	"github.com/stretchr/testify/assert"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -22,13 +26,34 @@ func TestGenericLexer_lexLine(t *testing.T) {
 				line: "println(\"Meow\")",
 			},
 		},
-		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			l := NewGenericLexer(nil, &Syntax{})
-			got, err := l.lexLine(tt.args.line, tt.args.lineNumber)
+			l, err := NewGenericLexer(strings.NewReader(tt.args.line), &Syntax{
+				KeyTokenTypes: KeyTokenTypes{
+					IdentifierTokenType:       optional.Some(TokenType(2)),
+					CharTokenType:             optional.Some(TokenType(3)),
+					StringTokenType:           optional.Some(TokenType(4)),
+					NumberTokenType:           optional.Some(TokenType(5)),
+					CommentTokenType:          optional.Some(TokenType(6)),
+					MultiLineCommentTokenType: optional.Some(TokenType(7)),
+				},
+				tokenTypes: map[string]TokenType{
+					"(": TokenType(0),
+					")": TokenType(1),
+				},
+			})
+			assert.NoError(t, err)
+			assert.NotNil(t, l)
+
+			got, err := l.lex()
+
+			fmt.Println(tt.args.line[14:15])
+			for _, token := range got {
+				fmt.Printf("%+v\n", token)
+			}
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("lexLine() error = %v, wantErr %v", err, tt.wantErr)
 				return

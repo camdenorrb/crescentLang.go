@@ -5,9 +5,12 @@ import (
 )
 
 type KeyTokenTypes struct {
-	IdentifierTokenType TokenType
-	CharTokenType       TokenType
-	StringTokenType     TokenType
+	IdentifierTokenType       optional.Option[TokenType]
+	CharTokenType             optional.Option[TokenType]
+	StringTokenType           optional.Option[TokenType]
+	NumberTokenType           optional.Option[TokenType]
+	CommentTokenType          optional.Option[TokenType]
+	MultiLineCommentTokenType optional.Option[TokenType]
 }
 
 // Syntax should define how to go from Token -> AST and AST -> Token
