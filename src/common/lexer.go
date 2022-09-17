@@ -1,7 +1,6 @@
 package common
 
 import (
-	"bufio"
 	"errors"
 	"github.com/joomcode/errorx"
 	"io"
@@ -27,44 +26,49 @@ type Lexer interface {
 }
 
 type GenericLexer struct {
-	reader      *bufio.Reader
-	syntax      *Syntax
-	builderMode BuilderMode
-	tokens      []Token
+	syntax *Syntax
 }
 
 type tokenBuilder struct {
-	mode        BuilderMode
+	syntax      *Syntax
 	cache       strings.Builder
 	tokens      []Token
+	mode        BuilderMode
 	columnIndex int
 	lineNumber  uint
-	syntax      *Syntax
 }
 
-func (b *tokenBuilder) toggleMode(mode BuilderMode) {
+func (b *tokenBuilder) toggleMode(mode BuilderMode) error {
 
 	if mode == UnsetBuilderMode {
-		return
+		return nil
 	}
 
 	if b.mode != mode {
 
 		if b.mode != UnsetBuilderMode {
-			b.unsetMode()
+			err := b.unsetMode()
+			if err != nil {
+				return errorx.Decorate(err, "[0] toggleMode failed to call unsetMode")
+			}
 		}
 
 		b.mode = mode
-		return
+		return nil
 	}
 
-	b.unsetMode()
+	err := b.unsetMode()
+	if err != nil {
+		return errorx.Decorate(err, "[0] toggleMode failed to call unsetMode")
+	}
+
+	return nil
 }
 
-func (b *tokenBuilder) unsetMode() {
+func (b *tokenBuilder) unsetMode() error {
 
 	if b.mode == UnsetBuilderMode {
-		return
+		return nil
 	}
 
 	token := Token{
@@ -72,8 +76,6 @@ func (b *tokenBuilder) unsetMode() {
 		ColumnRange: IntRange{Start: b.columnIndex - b.cache.Len(), End: b.columnIndex},
 		LineNumber:  b.lineNumber,
 	}
-
-	b.cache.Reset()
 
 	switch b.mode {
 
@@ -96,7 +98,7 @@ func (b *tokenBuilder) unsetMode() {
 	case SymbolBuilderMode:
 		tokenType, exists := b.syntax.tokenTypes[b.cache.String()]
 		if !exists {
-			// TODO: Error
+			return errorx.IllegalState.New("Could not find matching symbol type for: %q", b.cache.String())
 		}
 		token.Type = tokenType
 
@@ -110,6 +112,9 @@ func (b *tokenBuilder) unsetMode() {
 
 	b.mode = UnsetBuilderMode
 	b.tokens = append(b.tokens, token)
+	b.cache.Reset()
+
+	return nil
 }
 
 func (b *tokenBuilder) step(character rune) error {
@@ -122,29 +127,64 @@ func (b *tokenBuilder) step(character rune) error {
 		return nil
 
 	case '\'':
-		b.toggleMode(CharBuilderMode)
+		err := b.toggleMode(CharBuilderMode)
+		if err != nil {
+			return errorx.Decorate(err, "[0] step failed to call toggleMode")
+		}
 
 	case '"':
-		b.toggleMode(StringBuilderMode)
+		err := b.toggleMode(StringBuilderMode)
+		if err != nil {
+			return errorx.Decorate(err, "[1] step failed to call toggleMode")
+		}
 
 	// Note: Negative numbers won't be lexed entirely, will be Minus token first
 	case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0':
 
 		// If dot alone it should be originally be parsed as a symbol, but if number present, change
 		if b.mode != UnsetBuilderMode && b.cache.String() != "." {
-			return errorx.IllegalState.New("invalid number builder %q lineNumber: %d, column: %d", b.cache.String(), b.lineNumber, b.columnIndex)
+			err := b.unsetMode()
+			if err != nil {
+				return errorx.Decorate(err, "[0] step failed to call unsetMode")
+			}
+		}
+
+		if b.mode != NumberBuilderMode {
+			err := b.toggleMode(NumberBuilderMode)
+			if err != nil {
+				return errorx.Decorate(err, "[2] step failed to call toggleMode")
+			}
 		}
 
 		b.cache.WriteRune(character)
 
-		if b.mode == UnsetBuilderMode {
-			b.toggleMode(NumberBuilderMode)
-		}
-
 	default:
 
+		if unicode.IsSpace(character) {
+
+			if b.mode == IdentifierBuilderMode || b.mode == SymbolBuilderMode || b.mode == NumberBuilderMode {
+
+				b.columnIndex++
+
+				err := b.unsetMode()
+				if err != nil {
+					return errorx.Decorate(err, "[1] step failed to call unsetMode")
+				}
+
+				return nil
+			}
+
+			if b.mode == UnsetBuilderMode {
+				b.columnIndex++
+				return nil
+			}
+		}
+
 		if b.mode == NumberBuilderMode {
-			b.unsetMode()
+			err := b.unsetMode()
+			if err != nil {
+				return errorx.Decorate(err, "[2] step failed to call unsetMode")
+			}
 		}
 
 		if b.mode != StringBuilderMode && b.mode != CharBuilderMode {
@@ -152,13 +192,28 @@ func (b *tokenBuilder) step(character rune) error {
 			isLetter := unicode.IsLetter(character)
 
 			if b.mode != IdentifierBuilderMode && isLetter {
-				b.toggleMode(IdentifierBuilderMode)
+				err := b.toggleMode(IdentifierBuilderMode)
+				if err != nil {
+					return errorx.Decorate(err, "[3] step failed to call toggleMode")
+				}
 			} else if b.mode != SymbolBuilderMode && !isLetter {
-				b.toggleMode(SymbolBuilderMode)
+				err := b.toggleMode(SymbolBuilderMode)
+				if err != nil {
+					return errorx.Decorate(err, "[4] step failed to call toggleMode")
+				}
 			}
 		}
 
 		b.cache.WriteRune(character)
+
+		_, exists := b.syntax.tokenTypes[b.cache.String()]
+		if exists {
+			err := b.unsetMode()
+			if err != nil {
+				return errorx.Decorate(err, "[3] step failed to call unsetMode")
+			}
+		}
+
 	}
 
 	b.columnIndex++
@@ -166,7 +221,7 @@ func (b *tokenBuilder) step(character rune) error {
 	return nil
 }
 
-func NewGenericLexer(reader io.Reader, syntax *Syntax) (*GenericLexer, error) {
+func NewGenericLexer(syntax *Syntax) (*GenericLexer, error) {
 
 	if syntax.CharTokenType.IsNone() {
 		return nil, errors.New("NewGenericLexer requires CharTokenType not to be nil")
@@ -192,20 +247,16 @@ func NewGenericLexer(reader io.Reader, syntax *Syntax) (*GenericLexer, error) {
 		return nil, errors.New("NewGenericLexer requires MultiLineCommentTokenType not to be nil")
 	}
 
-	return &GenericLexer{
-		reader:      bufio.NewReader(reader),
-		syntax:      syntax,
-		builderMode: UnsetBuilderMode,
-	}, nil
+	return &GenericLexer{syntax: syntax}, nil
 }
 
-func (l *GenericLexer) lex() ([]Token, error) {
+func (l *GenericLexer) lex(reader *strings.Reader) ([]Token, error) {
 
 	builder := tokenBuilder{syntax: l.syntax}
 
 	for {
 
-		character, _, err := l.reader.ReadRune()
+		character, _, err := reader.ReadRune()
 		if err != nil {
 
 			if err == io.EOF {
@@ -221,7 +272,10 @@ func (l *GenericLexer) lex() ([]Token, error) {
 		}
 	}
 
-	builder.unsetMode()
+	err := builder.unsetMode()
+	if err != nil {
+		return nil, errorx.Decorate(err, "lex failed to call unsetMode")
+	}
 
 	return builder.tokens, nil
 }

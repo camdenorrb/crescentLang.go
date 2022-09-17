@@ -9,9 +9,9 @@ import (
 type Pattern = []sets.Set
 
 type Parser struct {
+	syntax Syntax
 	nodes  []Node
 	index  uint
-	syntax Syntax
 }
 
 type Scope struct {

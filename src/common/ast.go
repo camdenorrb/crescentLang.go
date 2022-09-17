@@ -18,20 +18,20 @@ type Struct struct {
 
 type Function struct {
 	Name       string
-	Parameters []Parameter
 	Visibility Visibility
+	Parameters []Parameter
 }
 
 type Parameter struct {
-	Name string
 	Type Type
+	Name string
 }
 
 type Variable struct {
-	Name       string
 	Value      Value
-	IsMutable  bool
 	Visibility *Visibility
+	Name       string
+	IsMutable  bool
 }
 
 type Operation struct {
@@ -41,8 +41,8 @@ type Operation struct {
 }
 
 type Call struct {
-	Name string
 	Next Node
+	Name string
 }
 
 type ArrayType struct {
