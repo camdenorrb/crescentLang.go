@@ -35,7 +35,7 @@ type tokenBuilder struct {
 	tokens      []Token
 	mode        BuilderMode
 	columnIndex int
-	lineNumber  uint
+	lineNumber  uint // Maybe store the line number range for current token?
 }
 
 func (b *tokenBuilder) toggleMode(mode BuilderMode) error {
