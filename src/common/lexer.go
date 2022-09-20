@@ -1,7 +1,6 @@
 package common
 
 import (
-	"errors"
 	"github.com/joomcode/errorx"
 	"io"
 	"strings"
@@ -117,6 +116,55 @@ func (b *tokenBuilder) unsetMode() error {
 	return nil
 }
 
+/*
+Tries to find the symbol by searching for full length then truncating until matches
+Then tries to repeat the process on the truncated data to find more matches and appends if so
+Will return empty slice if none are found, will return string of no matches if only some are found
+*/
+func (b *tokenBuilder) findSymbols() ([]Token, string) {
+
+	cacheAsString := b.cache.String()
+
+	var tokens []Token
+
+	// Early condition to avoid looping
+	if tokenType, exists := b.syntax.tokenTypes[cacheAsString]; exists {
+
+		tokens = append(tokens, Token{
+			ColumnRange: IntRange{
+				Start: b.columnIndex - b.cache.Len(),
+				End:   b.columnIndex,
+			},
+			Type: tokenType,
+		})
+
+		return tokens, ""
+	}
+
+	start := 0
+	current := cacheAsString
+
+	for current != "" {
+		for takeUntil := len(current); takeUntil > 0; takeUntil-- {
+
+			if tokenType, exists := b.syntax.tokenTypes[cacheAsString]; exists {
+
+				tokens = append(tokens, Token{
+					ColumnRange: IntRange{
+						Start: b.columnIndex - b.cache.Len() + start,
+						End:   b.columnIndex - len(current),
+					},
+					Type: tokenType,
+				})
+
+				current = current[:]
+			}
+
+		}
+	}
+
+}
+
 func (b *tokenBuilder) step(character rune) error {
 
 	switch character {
@@ -160,60 +208,39 @@ func (b *tokenBuilder) step(character rune) error {
 
 	default:
 
-		if unicode.IsSpace(character) {
+		if b.mode != StringBuilderMode && b.mode != CharBuilderMode {
 
-			if b.mode == IdentifierBuilderMode || b.mode == SymbolBuilderMode || b.mode == NumberBuilderMode {
+			// Fix mode
+			switch {
 
-				b.columnIndex++
-
+			case unicode.IsSpace(character):
 				err := b.unsetMode()
 				if err != nil {
 					return errorx.Decorate(err, "[1] step failed to call unsetMode")
 				}
-
-				return nil
-			}
-
-			if b.mode == UnsetBuilderMode {
 				b.columnIndex++
 				return nil
-			}
-		}
 
-		if b.mode == NumberBuilderMode {
-			err := b.unsetMode()
-			if err != nil {
-				return errorx.Decorate(err, "[2] step failed to call unsetMode")
-			}
-		}
-
-		if b.mode != StringBuilderMode && b.mode != CharBuilderMode {
-
-			isLetter := unicode.IsLetter(character)
-
-			if b.mode != IdentifierBuilderMode && isLetter {
-				err := b.toggleMode(IdentifierBuilderMode)
-				if err != nil {
-					return errorx.Decorate(err, "[3] step failed to call toggleMode")
+			case unicode.IsLetter(character):
+				if b.mode != IdentifierBuilderMode {
+					err := b.toggleMode(IdentifierBuilderMode)
+					if err != nil {
+						return errorx.Decorate(err, "[3] step failed to call toggleMode")
+					}
 				}
-			} else if b.mode != SymbolBuilderMode && !isLetter {
-				err := b.toggleMode(SymbolBuilderMode)
-				if err != nil {
-					return errorx.Decorate(err, "[4] step failed to call toggleMode")
+
+			default:
+				if b.mode != SymbolBuilderMode {
+					err := b.toggleMode(SymbolBuilderMode)
+					if err != nil {
+						return errorx.Decorate(err, "[3] step failed to call toggleMode")
+					}
 				}
 			}
+
 		}
 
 		b.cache.WriteRune(character)
-
-		_, exists := b.syntax.tokenTypes[b.cache.String()]
-		if exists {
-			err := b.unsetMode()
-			if err != nil {
-				return errorx.Decorate(err, "[3] step failed to call unsetMode")
-			}
-		}
-
 	}
 
 	b.columnIndex++
