@@ -49,7 +49,6 @@ func TestGenericLexer_lexLine(t *testing.T) {
 
 			got, err := l.lex(strings.NewReader(tt.args.line))
 
-			fmt.Println(tt.args.line[14:15])
 			for _, token := range got {
 				fmt.Printf("%+v\n", token)
 			}
@@ -94,20 +93,26 @@ func TestTanna(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	reader := strings.NewReader(`
-	constant value0 = 10
-	constant value1 = 20
+	input := `
+			constant value0 11
+			constant value1 = 20
 
-	function add(a: Int, b: Int): Int {
-		=> a + b
-	}
-`)
+			function add(a: Int, b: Int): Int {
+				=> a + b
+			}
+		`
 
-	tokens, err := lexer.lex(reader)
+	tokens, err := lexer.lex(strings.NewReader(input))
 	assert.NoError(t, err)
+
+	lines := strings.Split(input, "\n")
 
 	for _, token := range tokens {
 		fmt.Printf("%+v\n", token)
+	}
+
+	for _, token := range tokens {
+		fmt.Println(lines[token.LineNumber][token.ColumnRange.Start:token.ColumnRange.End], len(lines[token.LineNumber][token.ColumnRange.Start:token.ColumnRange.End]))
 	}
 
 }

@@ -1,7 +1,5 @@
 package common
 
-import "github.com/moznion/go-optional"
-
 // Parser would essentially be a big switch statement in this case
 
 type TokenType = uint8
@@ -13,7 +11,7 @@ type IntRange struct {
 }
 
 type Token struct {
-	LineRange   optional.Option[IntRange]
+	//LineRange   optional.Option[IntRange] Not needed just parse multiline comments as multiple comments
 	Value       any
 	ColumnRange IntRange
 	LineNumber  uint

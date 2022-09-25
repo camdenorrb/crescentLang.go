@@ -102,9 +102,10 @@ func (b *tokenBuilder) unsetMode() error {
 		token.Type = b.syntax.MultiLineCommentTokenType.Unwrap()
 
 	case SymbolBuilderMode:
-		tokens, remaining := b.findSymbols()
-		if remaining != "" {
-			return errorx.IllegalState.New("Could not find matching symbol type for: %q", remaining)
+
+		tokens, err := b.findSymbols()
+		if err != nil {
+			return errorx.Decorate(err, "failed to call findSymbols")
 		}
 
 		b.mode = UnsetBuilderMode
@@ -125,58 +126,66 @@ Tries to find the symbol by searching for full length then truncating until matc
 Then tries to repeat the process on the truncated data to find more matches and appends if so
 Will return empty slice if none are found, will return string of no matches if only some are found
 */
-func (b *tokenBuilder) findSymbols() ([]Token, string) {
+
+func (b *tokenBuilder) findSymbols() ([]Token, error) {
 
 	cacheAsString := b.cache.String()
 
-	var tokens []Token
-
-	// Early condition to avoid looping
 	if tokenType, exists := b.syntax.tokenTypes[cacheAsString]; exists {
 
-		tokens = append(tokens, Token{
+		token := Token{
 			ColumnRange: IntRange{
-				Start: b.columnIndex - b.cache.Len(),
+				Start: b.columnIndex - len(cacheAsString),
 				End:   b.columnIndex,
 			},
-			Type: tokenType,
-		})
+			LineNumber: b.lineNumber,
+			Type:       tokenType,
+		}
 
-		return tokens, ""
+		return []Token{token}, nil
 	}
 
-	start := 0
-	current := cacheAsString
+	var tokens []Token
+	var lastMatch *TokenType
 
-	foundToken := true
+	startOfLastMatch := 0
 
-	for foundToken {
+	for index := 0; index < len(cacheAsString); index++ {
+		if tokenType, exists := b.syntax.tokenTypes[cacheAsString[startOfLastMatch:index]]; exists {
+			lastMatch = &tokenType
+		} else if lastMatch != nil {
 
-		foundToken = false
-
-		for takeUntil := len(current) - 1; takeUntil >= 0; takeUntil-- {
-
-			if tokenType, exists := b.syntax.tokenTypes[current]; exists {
-
-				tokens = append(tokens, Token{
-					ColumnRange: IntRange{
-						Start: b.columnIndex - b.cache.Len() + start,
-						End:   b.columnIndex - len(current),
-					},
-					Type: tokenType,
-				})
-
-				start += takeUntil + 1
-				current = cacheAsString[start:]
-				foundToken = true
-				continue
+			token := Token{
+				ColumnRange: IntRange{
+					Start: b.columnIndex - len(cacheAsString) + startOfLastMatch,
+					End:   b.columnIndex - len(cacheAsString) + index - 1,
+				},
+				LineNumber: b.lineNumber,
+				Type:       *lastMatch,
 			}
 
-			current = current[:takeUntil]
+			tokens = append(tokens, token)
+
+			startOfLastMatch = index - 1
+			lastMatch = nil
 		}
 	}
 
-	return tokens, current
+	if tokenType, exists := b.syntax.tokenTypes[cacheAsString[startOfLastMatch:]]; exists {
+
+		token := Token{
+			ColumnRange: IntRange{
+				Start: b.columnIndex - len(cacheAsString) + startOfLastMatch,
+				End:   b.columnIndex,
+			},
+			LineNumber: b.lineNumber,
+			Type:       tokenType,
+		}
+
+		tokens = append(tokens, token)
+	}
+
+	return tokens, nil
 }
 
 func (b *tokenBuilder) step(character rune) error {
@@ -184,6 +193,12 @@ func (b *tokenBuilder) step(character rune) error {
 	switch character {
 
 	case '\n':
+
+		err := b.unsetMode()
+		if err != nil {
+			return errorx.Decorate(err, "[0] step failed to call unsetMode")
+		}
+
 		b.lineNumber++
 		b.columnIndex = 0
 		return nil
@@ -203,15 +218,7 @@ func (b *tokenBuilder) step(character rune) error {
 	// Note: Negative numbers won't be lexed entirely, will be Minus token first
 	case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0':
 
-		// If dot alone it should be originally be parsed as a symbol, but if number present, change
-		if b.mode != UnsetBuilderMode && b.cache.String() != "." {
-			err := b.unsetMode()
-			if err != nil {
-				return errorx.Decorate(err, "[0] step failed to call unsetMode")
-			}
-		}
-
-		if b.mode != NumberBuilderMode {
+		if (b.mode != NumberBuilderMode || b.cache.String() == ".") && b.mode != StringBuilderMode && b.mode != IdentifierBuilderMode {
 			err := b.toggleMode(NumberBuilderMode)
 			if err != nil {
 				return errorx.Decorate(err, "[2] step failed to call toggleMode")
