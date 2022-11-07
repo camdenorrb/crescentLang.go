@@ -23,7 +23,7 @@ func TestGenericLexer_lexLine(t *testing.T) {
 		{
 			name: "Meow",
 			args: args{
-				line: "println(\"Meow\")",
+				line: "println;(\"Meow\");",
 			},
 		},
 	}
@@ -114,7 +114,6 @@ func TestTanna(t *testing.T) {
 	for _, token := range tokens {
 		fmt.Println(lines[token.LineNumber][token.ColumnRange.Start:token.ColumnRange.End], len(lines[token.LineNumber][token.ColumnRange.Start:token.ColumnRange.End]))
 	}
-
 }
 
 func BenchmarkWord(b *testing.B) {
@@ -142,7 +141,6 @@ func BenchmarkWord(b *testing.B) {
 			",":        TokenType(10),
 		},
 	})
-
 	if err != nil {
 		return
 	}

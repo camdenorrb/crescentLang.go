@@ -2,6 +2,7 @@ package common
 
 import (
 	"errors"
+	"fmt"
 	"github.com/joomcode/errorx"
 	"io"
 	"strings"
@@ -82,10 +83,12 @@ func (b *tokenBuilder) unsetMode() error {
 	case CharBuilderMode:
 		// TODO: Validate length of cache
 		token.ColumnRange.Start -= 1 // To account for starting '
+		token.ColumnRange.End += 1   // To account for ending '
 		token.Type = b.syntax.CharTokenType.Unwrap()
 
 	case StringBuilderMode:
 		token.ColumnRange.Start -= 1 // To account for starting "
+		token.ColumnRange.End += 1   // To account for ending "
 		token.Type = b.syntax.StringTokenType.Unwrap()
 
 	case NumberBuilderMode:
@@ -121,12 +124,9 @@ func (b *tokenBuilder) unsetMode() error {
 	return nil
 }
 
-/*
-Tries to find the symbol by searching for full length then truncating until matches
-Then tries to repeat the process on the truncated data to find more matches and appends if so
-Will return empty slice if none are found, will return string of no matches if only some are found
-*/
-
+// findSymbols Tries to find the symbol by searching for full length then truncating until matches
+// Then tries to repeat the process on the truncated data to find more matches and appends if so
+// Will return empty slice if none are found, will return string of no matches if only some are found
 func (b *tokenBuilder) findSymbols() ([]Token, error) {
 
 	cacheAsString := b.cache.String()
@@ -150,7 +150,7 @@ func (b *tokenBuilder) findSymbols() ([]Token, error) {
 
 	startOfLastMatch := 0
 
-	for index := 0; index < len(cacheAsString); index++ {
+	for index := 1; index <= len(cacheAsString); index++ {
 		if tokenType, exists := b.syntax.tokenTypes[cacheAsString[startOfLastMatch:index]]; exists {
 			lastMatch = &tokenType
 		} else if lastMatch != nil {
@@ -158,7 +158,7 @@ func (b *tokenBuilder) findSymbols() ([]Token, error) {
 			token := Token{
 				ColumnRange: IntRange{
 					Start: b.columnIndex - len(cacheAsString) + startOfLastMatch,
-					End:   b.columnIndex - len(cacheAsString) + index - 1,
+					End:   b.columnIndex - len(cacheAsString) + startOfLastMatch + index - 1,
 				},
 				LineNumber: b.lineNumber,
 				Type:       *lastMatch,
@@ -176,13 +176,15 @@ func (b *tokenBuilder) findSymbols() ([]Token, error) {
 		token := Token{
 			ColumnRange: IntRange{
 				Start: b.columnIndex - len(cacheAsString) + startOfLastMatch,
-				End:   b.columnIndex,
+				End:   b.columnIndex - len(cacheAsString) + (len(cacheAsString) - startOfLastMatch) + 1,
 			},
 			LineNumber: b.lineNumber,
 			Type:       tokenType,
 		}
 
 		tokens = append(tokens, token)
+	} else {
+		fmt.Println("Error", cacheAsString[startOfLastMatch:])
 	}
 
 	return tokens, nil
@@ -258,7 +260,6 @@ func (b *tokenBuilder) step(character rune) error {
 					}
 				}
 			}
-
 		}
 
 		b.cache.WriteRune(character)

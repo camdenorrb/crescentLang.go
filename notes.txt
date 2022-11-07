@@ -1,3 +1,10 @@
 Abstract process from string -> Token -> AST
 
 Compile all languages to a similar IR
+
+
+Every language implementation should have a way to write back to text with stuff like `writeFunction()`, `writeClass`, etc.
+
+
+language.def:
+Lexer should try to match plain text before attempting regex
