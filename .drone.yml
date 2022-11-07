@@ -14,16 +14,22 @@ type: docker
 name: default
 
 steps:
-  - name: lint
-    pull: never
-    image: crescent-lang:latest
+  - name: test
+    image: golang:alpine
     commands:
-      - apk add --update curl docker openrc --no-cache
-      - dockerd
-      - cd /usr/local
-      - curl -L https://dl.dagger.io/dagger/install.sh | sh
-      - cd -
-      - sudo dagger do lint --log-format plain
+      - go test
+      - go build
+      - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+  #- name: lint
+  #  pull: never
+  #  image: crescent-lang:latest
+  #  commands:
+  #    - apk add --update curl docker openrc --no-cache
+  #    - dockerd
+  #    - cd /usr/local
+  #    - curl -L https://dl.dagger.io/dagger/install.sh | sh
+  #    - cd -
+  #    - sudo dagger do lint --log-format plain
 
 
 
@@ -33,13 +39,6 @@ steps:
 #      - apk add build-base
 #      - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 #      - golangci-lint run --enable-all
-#
-#  - name: test
-#    image: golang:alpine
-#    commands:
-#      - go test
-#      - go build
-#      - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 #
 
 
