@@ -19,8 +19,8 @@ steps:
     commands:
       - apk add build-base
       - cd src
-      - go test
-      - go build
+      - go test -v
+      #- go build
       #- go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
   #- name: lint
   #  pull: never
