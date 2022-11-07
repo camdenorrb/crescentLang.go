@@ -21,7 +21,7 @@ steps:
       - cd src
       - go test
       - go build
-      - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+      #- go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
   #- name: lint
   #  pull: never
   #  image: crescent-lang:latest
