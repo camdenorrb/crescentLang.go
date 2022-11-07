@@ -17,6 +17,7 @@ steps:
   - name: test
     image: golang:alpine
     commands:
+      - apk add build-base
       - cd src
       - go test
       - go build
