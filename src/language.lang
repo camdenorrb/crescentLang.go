@@ -1,0 +1,33 @@
+lexer {
+
+   # surroundDynamic tries to match the longest starting substring of the input then tries to pair it with the ending substring
+   Example: { surroundDynamic('`') }
+
+   # Deprecated: Can be determined from parser examples
+   #Keywords: ```
+   #    lexer parser test
+   #```
+
+   # Operators are in order of precedence
+   Operators: ```
+       { } ( ) : |
+   ```
+
+}
+
+parser {
+
+    Main(Lexer | Parser | Test)
+
+    Lexer:
+    	'lexer' '{' examples:[]Example '}' |
+    	'lexer' example:Example
+
+    Parser:
+    	'parser' '{' examples:[]Example '}' |
+		'parser' example:Example
+
+ 	Test:
+		'test' '{' examples:[]Example '}'
+
+}

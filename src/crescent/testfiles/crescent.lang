@@ -6,115 +6,72 @@ import math
 lexer {
 
    # Pop will be default
-   EOF: {
-       pop()
-   }
+   EOF: pop()
 
    # skip will be default
-   WhiteSpace: {
-       skip()
-   }
+   WhiteSpace: skip()
 
    # skip will be default
-   NewLine: {
-       skip()
-   }
-
+   NewLine: skip()
 
    # Identifier, Char, String should be defaults, with an option for `none()`
    # By default, we should be able to just use `identifier()` which will be optimized
-   ID: ``
-       [a-zA-Z][a-zA-Z0-9_]+
-   ``
+   ID: '[a-zA-Z][a-zA-Z0-9_]+'
 
-   Char: surround(')
+   Char: surround('\'')
 
    # This can be optimized by default
-   String: surround(")
+   String: surround('"')
+
+   Number: '[0-9]+'
 
 
    # Operators are in order of precedence
    Operators: ```
        , . ? ! + - * ^ / % == != < > <= >= && || = += -= /= %= ^= => ( ) [ ] { } :
    ```
-   Keywords: ````
-       import
-       fun struct impl trait object enum sealed
-       and or xor shl shr ushr
-       if else when while for in break continue
-       true false null
-       var val const
-       async override operator inline static
-       public internal private
-   ````
+
+   # Deprecated: Keywords can be determined from the parser
+   #Keywords: ````
+   #    import
+   #    fun struct impl trait object enum sealed
+   #    and or xor shl shr ushr
+   #    if else when while for in break continue
+   #    true false null
+   #    var val const
+   #    async override operator inline static
+   #   public internal private
+   #````
 }
 
 
 # Overloading is a thing
 parser {
 
-    Main(Import | Struct | Trait | Declaration)
+    Main: Import | Struct | Trait | Declaration
 
-    Import {
-       `import ${path:String}`
-    }
+    Import: 'import' path:String
+    Fields: name:String ':' type:ID (',' | '\n')*
+    Struct: 'struct' name:ID '{' fields:Fields '}'
+    Trait: 'trait' name:ID '{' fields:Fields '}'
 
-    Fields {
-       `${name:String}: ${type:ID}` repeat { `,` | `\n` }
-    }
+    Variable: Var | Val | Const
+    Var: 'var' name:ID '=' value:Expr
+    Val: 'val' name:ID '=' value:Expr
+    Const: 'const' name:ID '=' value:Expr
 
-    Struct {
-         `struct ${name:ID} { ${fields:Fields} }`
-    }
+    Expr: Math
 
-    Trait {
-         `trait ${name:ID} { ${fields:Fields} }`
-    }
+    # Note, operators go through shunting yard before this step
+    #Math: Sum | Sub | Mul | Div | Mod | Number | ID
+    #Sum: left:Math '+' right:Math
+    #Sub: left:Math '-' right:Math
+    #Mul: left:Math '*' right:Math
+    #Div: left:Math '/' right:Math
+    #Mod: left:Math '%' right:Math
 
-    # Note, commas are optional for operators
-    Var {
-        `var ${name:ID} = ${value:Expr}`
-    }
-
-    Val {
-        `val ${name:ID} = ${value:Expr}`
-    }
-
-    Const {
-        `const ${name:ID} = ${value:Expr}`
-    }
-
-
-    /*
-    this is shit, but it's a start
-    Expr(Sum | Sub | Mul | Div | Mod)
-
-    Sum {
-        `${left:Expr} + ${right:Expr}`
-    }
-
-    Sub {
-        `${left:Expr} - ${right:Expr}`
-    }
-
-    Mul {
-        `${left:Expr} * ${right:Expr}`
-    }
-
-    Div {
-        `${left:Expr} / ${right:Expr}`
-    }
-
-    Mod {
-        `${left:Expr} % ${right:Expr}`
-    }
-
-    */ 
-    
-    Statement {}
-    Declaration {}
+    Value: ID | Char | String | Number | '(' Expr ')'
 }
-
 
 test {
 
