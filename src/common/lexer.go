@@ -131,7 +131,7 @@ func (b *tokenBuilder) findSymbols() ([]Token, error) {
 
 	cacheAsString := b.cache.String()
 
-	if tokenType, exists := b.syntax.tokenTypes[cacheAsString]; exists {
+	if tokenType, exists := b.syntax.TokenTypes[cacheAsString]; exists {
 
 		token := Token{
 			ColumnRange: IntRange{
@@ -151,7 +151,7 @@ func (b *tokenBuilder) findSymbols() ([]Token, error) {
 	startOfLastMatch := 0
 
 	for index := 1; index <= len(cacheAsString); index++ {
-		if tokenType, exists := b.syntax.tokenTypes[cacheAsString[startOfLastMatch:index]]; exists {
+		if tokenType, exists := b.syntax.TokenTypes[cacheAsString[startOfLastMatch:index]]; exists {
 			lastMatch = &tokenType
 		} else if lastMatch != nil {
 
@@ -171,7 +171,7 @@ func (b *tokenBuilder) findSymbols() ([]Token, error) {
 		}
 	}
 
-	if tokenType, exists := b.syntax.tokenTypes[cacheAsString[startOfLastMatch:]]; exists {
+	if tokenType, exists := b.syntax.TokenTypes[cacheAsString[startOfLastMatch:]]; exists {
 
 		token := Token{
 			ColumnRange: IntRange{

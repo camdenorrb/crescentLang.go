@@ -39,7 +39,7 @@ func TestGenericLexer_lexLine(t *testing.T) {
 					CommentTokenType:          optional.Some(TokenType(6)),
 					MultiLineCommentTokenType: optional.Some(TokenType(7)),
 				},
-				tokenTypes: map[string]TokenType{
+				TokenTypes: map[string]TokenType{
 					"(": TokenType(0),
 					")": TokenType(1),
 				},
@@ -75,7 +75,7 @@ func TestTanna(t *testing.T) {
 			CommentTokenType:          optional.Some(TokenType(6)),
 			MultiLineCommentTokenType: optional.Some(TokenType(7)),
 		},
-		tokenTypes: map[string]TokenType{
+		TokenTypes: map[string]TokenType{
 			"sout":     TokenType(0),
 			"function": TokenType(1),
 			"Int":      TokenType(2),
@@ -127,7 +127,7 @@ func BenchmarkWord(b *testing.B) {
 			CommentTokenType:          optional.Some(TokenType(6)),
 			MultiLineCommentTokenType: optional.Some(TokenType(7)),
 		},
-		tokenTypes: map[string]TokenType{
+		TokenTypes: map[string]TokenType{
 			"sout":     TokenType(0),
 			"function": TokenType(1),
 			"Int":      TokenType(2),

@@ -25,7 +25,6 @@ lexer {
 
    Number: '[0-9]+'
 
-
    # Operators are in order of precedence
    Operators: ```
        , . ? ! + - * ^ / % == != < > <= >= && || = += -= /= %= ^= => ( ) [ ] { } :

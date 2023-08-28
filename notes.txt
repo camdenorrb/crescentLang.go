@@ -8,3 +8,5 @@ Every language implementation should have a way to write back to text with stuff
 
 language.def:
 Lexer should try to match plain text before attempting regex
+
+The language definition files should be able to be compiled to GO or Crescent

@@ -1,6 +1,7 @@
 package language
 
 import (
+	"crescentLang/common"
 	"errors"
 	"fmt"
 	"github.com/joomcode/errorx"
@@ -23,17 +24,17 @@ const (
 )
 
 type Lexer interface {
-	Lex(lines chan string) []Token
+	Lex(lines chan string) []common.Token
 }
 
 type GenericLexer struct {
-	syntax *Syntax
+	syntax *common.Syntax
 }
 
 type tokenBuilder struct {
-	syntax      *Syntax
+	syntax      *common.Syntax
 	cache       strings.Builder
-	tokens      []Token
+	tokens      []common.Token
 	mode        BuilderMode
 	columnIndex int
 	lineNumber  uint // Maybe store the line number range for current token?
@@ -72,9 +73,9 @@ func (b *tokenBuilder) unsetMode() error {
 		return nil
 	}
 
-	token := Token{
+	token := common.Token{
 		Value:       b.cache.String(),
-		ColumnRange: IntRange{Start: b.columnIndex - b.cache.Len(), End: b.columnIndex},
+		ColumnRange: common.IntRange{Start: b.columnIndex - b.cache.Len(), End: b.columnIndex},
 		LineNumber:  b.lineNumber,
 	}
 
@@ -127,14 +128,14 @@ func (b *tokenBuilder) unsetMode() error {
 // findSymbols Tries to find the symbol by searching for full length then truncating until matches
 // Then tries to repeat the process on the truncated data to find more matches and appends if so
 // Will return empty slice if none are found, will return string of no matches if only some are found
-func (b *tokenBuilder) findSymbols() ([]Token, error) {
+func (b *tokenBuilder) findSymbols() ([]common.Token, error) {
 
 	cacheAsString := b.cache.String()
 
-	if tokenType, exists := b.syntax.tokenTypes[cacheAsString]; exists {
+	if tokenType, exists := b.syntax.TokenTypes[cacheAsString]; exists {
 
-		token := Token{
-			ColumnRange: IntRange{
+		token := common.Token{
+			ColumnRange: common.IntRange{
 				Start: b.columnIndex - len(cacheAsString),
 				End:   b.columnIndex,
 			},
@@ -142,21 +143,21 @@ func (b *tokenBuilder) findSymbols() ([]Token, error) {
 			Type:       tokenType,
 		}
 
-		return []Token{token}, nil
+		return []common.Token{token}, nil
 	}
 
-	var tokens []Token
-	var lastMatch *TokenType
+	var tokens []common.Token
+	var lastMatch *common.TokenType
 
 	startOfLastMatch := 0
 
 	for index := 1; index <= len(cacheAsString); index++ {
-		if tokenType, exists := b.syntax.tokenTypes[cacheAsString[startOfLastMatch:index]]; exists {
+		if tokenType, exists := b.syntax.TokenTypes[cacheAsString[startOfLastMatch:index]]; exists {
 			lastMatch = &tokenType
 		} else if lastMatch != nil {
 
-			token := Token{
-				ColumnRange: IntRange{
+			token := common.Token{
+				ColumnRange: common.IntRange{
 					Start: b.columnIndex - len(cacheAsString) + startOfLastMatch,
 					End:   b.columnIndex - len(cacheAsString) + startOfLastMatch + index - 1,
 				},
@@ -171,10 +172,10 @@ func (b *tokenBuilder) findSymbols() ([]Token, error) {
 		}
 	}
 
-	if tokenType, exists := b.syntax.tokenTypes[cacheAsString[startOfLastMatch:]]; exists {
+	if tokenType, exists := b.syntax.TokenTypes[cacheAsString[startOfLastMatch:]]; exists {
 
-		token := Token{
-			ColumnRange: IntRange{
+		token := common.Token{
+			ColumnRange: common.IntRange{
 				Start: b.columnIndex - len(cacheAsString) + startOfLastMatch,
 				End:   b.columnIndex - len(cacheAsString) + (len(cacheAsString) - startOfLastMatch) + 1,
 			},
@@ -270,7 +271,7 @@ func (b *tokenBuilder) step(character rune) error {
 	return nil
 }
 
-func NewGenericLexer(syntax *Syntax) (*GenericLexer, error) {
+func NewGenericLexer(syntax *common.Syntax) (*GenericLexer, error) {
 
 	if syntax.CharTokenType.IsNone() {
 		return nil, errors.New("NewGenericLexer requires CharTokenType not to be nil")
@@ -299,7 +300,7 @@ func NewGenericLexer(syntax *Syntax) (*GenericLexer, error) {
 	return &GenericLexer{syntax: syntax}, nil
 }
 
-func (l *GenericLexer) lex(reader *strings.Reader) ([]Token, error) {
+func (l *GenericLexer) lex(reader *strings.Reader) ([]common.Token, error) {
 
 	builder := tokenBuilder{syntax: l.syntax}
 

@@ -91,13 +91,6 @@ func lexLine(line string, lineNumber uint) []common.Token {
 				Type:        REM,
 			})
 
-		case '%':
-			tokens = append(tokens, common.Token{
-				ColumnRange: common.IntRange{Start: index, End: index},
-				LineNumber:  lineNumber,
-				Type:        REM,
-			})
-
 		case '^':
 			tokens = append(tokens, common.Token{
 				ColumnRange: common.IntRange{Start: index, End: index},
