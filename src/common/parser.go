@@ -3,7 +3,6 @@ package common
 import (
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/joomcode/errorx"
-	"go/ast"
 )
 
 type ParserMode uint
@@ -21,18 +20,17 @@ const (
 // Meaning that for each index there can be multiple valid token types
 type Pattern struct {
 	Name   string
-	Parser func(*Parser, []Token) (ast.Node, error)
+	Parser func(*Parser, []Token) (Node, error) // Can be nil, if nil then the node is automatically generated
 	Tokens []mapset.Set[TokenType]
 }
 
 type Parser struct {
-	syntax           Syntax
-	patterns         map[ParserMode][]Pattern
-	nodes            []Node
-	matchingPatterns []Pattern
-	tokenCache       []Token
-	parserType       ParserMode
-	index            int
+	Syntax           *Syntax
+	Patterns         map[ParserMode][]Pattern
+	Mode             ParserMode
+	matchingPatterns []Pattern // TODO: Inline
+	tokenCache       []Token   // TODO: Inline
+	index            int       // TODO: Inline
 }
 
 /*
@@ -51,11 +49,11 @@ type Converter struct {
 // The registered pattern parsers should control the Parser state
 
 // TODO: Error result should have the line and column number
-func (p *Parser) Parse(tokens []Token) ([]ast.Node, error) {
+func (p *Parser) Parse(tokens []Token) ([]Node, error) {
 
-	var nodes []ast.Node
+	var nodes []Node
 
-	p.matchingPatterns = p.patterns[p.parserType]
+	p.matchingPatterns = p.Patterns[p.Mode]
 
 	for _, token := range tokens {
 
@@ -82,24 +80,26 @@ func (p *Parser) Parse(tokens []Token) ([]ast.Node, error) {
 			}
 
 			nodes = append(nodes, node)
-			p.matchingPatterns = p.patterns[p.parserType]
+			p.matchingPatterns = p.Patterns[p.Mode]
 			p.tokenCache = nil
 		}
 
 		if len(p.matchingPatterns) == 0 {
-			return nil, errorx.IllegalState.New("No matching patterns for %v", p.tokenCache)
+			return nil, errorx.IllegalState.New("No matching patterns for %+v", p.tokenCache)
 		}
 
 		p.index++
 	}
 
 	if (len(p.matchingPatterns) > 1 && len(p.tokenCache) > 1) || (len(p.matchingPatterns) == 1 && len(p.matchingPatterns[0].Tokens) != len(p.tokenCache)) {
-		return nil, errorx.IllegalState.New("Ambiguous patterns for %v", p.tokenCache)
+		return nil, errorx.IllegalState.New("Ambiguous patterns for %+v", p.tokenCache)
 	}
 
 	if len(p.matchingPatterns) == 1 {
 
-		node, err := p.matchingPatterns[0].Parser(p, p.tokenCache)
+		pattern := p.matchingPatterns[0]
+
+		node, err := pattern.Parser(p, p.tokenCache)
 		if err != nil {
 			return nil, err
 		}

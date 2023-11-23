@@ -10,3 +10,7 @@ language.def:
 Lexer should try to match plain text before attempting regex
 
 The language definition files should be able to be compiled to GO or Crescent
+https://www.cs.rochester.edu/users/faculty/nelson/courses/csc_173/grammars/cfg.html
+https://docs.python.org/3/reference/grammar.html
+https://kotlinlang.org/docs/reference/grammar.html
+https://github.com/antlr/grammars-v4

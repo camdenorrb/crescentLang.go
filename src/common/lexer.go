@@ -1,6 +1,7 @@
 package common
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"github.com/joomcode/errorx"
@@ -8,6 +9,9 @@ import (
 	"strings"
 	"unicode"
 )
+
+// TOKEN_VALUES_ALWAYS adds memory overhead to have the value of the token always be stored, easier debugging
+const TOKEN_VALUES_ALWAYS = true
 
 type BuilderMode uint
 
@@ -58,8 +62,7 @@ func (b *tokenBuilder) toggleMode(mode BuilderMode) error {
 		return nil
 	}
 
-	err := b.unsetMode()
-	if err != nil {
+	if err := b.unsetMode(); err != nil {
 		return errorx.Decorate(err, "[0] toggleMode failed to call unsetMode")
 	}
 
@@ -96,7 +99,11 @@ func (b *tokenBuilder) unsetMode() error {
 		token.Type = b.syntax.NumberTokenType.Unwrap()
 
 	case IdentifierBuilderMode:
-		token.Type = b.syntax.IdentifierTokenType.Unwrap()
+		if tokenType, found := b.syntax.TokenTypes[b.cache.String()]; found {
+			token.Type = tokenType
+		} else {
+			token.Type = b.syntax.IdentifierTokenType.Unwrap()
+		}
 
 	case CommentBuilderMode:
 		token.Type = b.syntax.CommentTokenType.Unwrap()
@@ -140,6 +147,10 @@ func (b *tokenBuilder) findSymbols() ([]Token, error) {
 			},
 			LineNumber: b.lineNumber,
 			Type:       tokenType,
+		}
+
+		if TOKEN_VALUES_ALWAYS {
+			token.Value = cacheAsString
 		}
 
 		return []Token{token}, nil
@@ -196,8 +207,7 @@ func (b *tokenBuilder) step(character rune) error {
 
 	case '\n':
 
-		err := b.unsetMode()
-		if err != nil {
+		if err := b.unsetMode(); err != nil {
 			return errorx.Decorate(err, "[0] step failed to call unsetMode")
 		}
 
@@ -206,14 +216,12 @@ func (b *tokenBuilder) step(character rune) error {
 		return nil
 
 	case '\'':
-		err := b.toggleMode(CharBuilderMode)
-		if err != nil {
+		if err := b.toggleMode(CharBuilderMode); err != nil {
 			return errorx.Decorate(err, "[0] step failed to call toggleMode")
 		}
 
 	case '"':
-		err := b.toggleMode(StringBuilderMode)
-		if err != nil {
+		if err := b.toggleMode(StringBuilderMode); err != nil {
 			return errorx.Decorate(err, "[1] step failed to call toggleMode")
 		}
 
@@ -221,8 +229,7 @@ func (b *tokenBuilder) step(character rune) error {
 	case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0':
 
 		if (b.mode != NumberBuilderMode || b.cache.String() == ".") && b.mode != StringBuilderMode && b.mode != IdentifierBuilderMode {
-			err := b.toggleMode(NumberBuilderMode)
-			if err != nil {
+			if err := b.toggleMode(NumberBuilderMode); err != nil {
 				return errorx.Decorate(err, "[2] step failed to call toggleMode")
 			}
 		}
@@ -237,8 +244,7 @@ func (b *tokenBuilder) step(character rune) error {
 			switch {
 
 			case unicode.IsSpace(character):
-				err := b.unsetMode()
-				if err != nil {
+				if err := b.unsetMode(); err != nil {
 					return errorx.Decorate(err, "[1] step failed to call unsetMode")
 				}
 				b.columnIndex++
@@ -246,17 +252,15 @@ func (b *tokenBuilder) step(character rune) error {
 
 			case unicode.IsLetter(character):
 				if b.mode != IdentifierBuilderMode {
-					err := b.toggleMode(IdentifierBuilderMode)
-					if err != nil {
+					if err := b.toggleMode(IdentifierBuilderMode); err != nil {
 						return errorx.Decorate(err, "[3] step failed to call toggleMode")
 					}
 				}
 
 			default:
 				if b.mode != SymbolBuilderMode {
-					err := b.toggleMode(SymbolBuilderMode)
-					if err != nil {
-						return errorx.Decorate(err, "[3] step failed to call toggleMode")
+					if err := b.toggleMode(SymbolBuilderMode); err != nil {
+						return errorx.Decorate(err, "[4] step failed to call toggleMode")
 					}
 				}
 			}
@@ -299,7 +303,7 @@ func NewGenericLexer(syntax *Syntax) (*GenericLexer, error) {
 	return &GenericLexer{syntax: syntax}, nil
 }
 
-func (l *GenericLexer) lex(reader *strings.Reader) ([]Token, error) {
+func (l *GenericLexer) Lex(reader *bufio.Reader) ([]Token, error) {
 
 	builder := tokenBuilder{syntax: l.syntax}
 
@@ -315,14 +319,12 @@ func (l *GenericLexer) lex(reader *strings.Reader) ([]Token, error) {
 			return nil, errorx.Decorate(err, "lex failed to read rune")
 		}
 
-		err = builder.step(character)
-		if err != nil {
+		if err = builder.step(character); err != nil {
 			return nil, errorx.Decorate(err, "lex failed to step")
 		}
 	}
 
-	err := builder.unsetMode()
-	if err != nil {
+	if err := builder.unsetMode(); err != nil {
 		return nil, errorx.Decorate(err, "lex failed to call unsetMode")
 	}
 

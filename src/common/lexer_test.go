@@ -1,6 +1,7 @@
 package common
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/moznion/go-optional"
 	"github.com/stretchr/testify/assert"
@@ -47,7 +48,7 @@ func TestGenericLexer_lexLine(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, l)
 
-			got, err := l.lex(strings.NewReader(tt.args.line))
+			got, err := l.Lex(bufio.NewReader(strings.NewReader(tt.args.line)))
 
 			for _, token := range got {
 				fmt.Printf("%+v\n", token)
@@ -76,19 +77,19 @@ func TestTanna(t *testing.T) {
 			MultiLineCommentTokenType: optional.Some(TokenType(7)),
 		},
 		TokenTypes: map[string]TokenType{
-			"sout":     TokenType(0),
-			"function": TokenType(1),
-			"Int":      TokenType(2),
-			"(":        TokenType(3),
-			")":        TokenType(4),
-			"+":        TokenType(5),
-			"=>":       TokenType(6),
-			"}":        TokenType(7),
-			"{":        TokenType(8),
-			":":        TokenType(9),
-			",":        TokenType(10),
-			"=":        TokenType(11),
-			">":        TokenType(12),
+			"sout":     TokenType(8),
+			"function": TokenType(9),
+			"Int":      TokenType(10),
+			"(":        TokenType(11),
+			")":        TokenType(12),
+			"+":        TokenType(13),
+			"=>":       TokenType(14),
+			"}":        TokenType(15),
+			"{":        TokenType(16),
+			":":        TokenType(17),
+			",":        TokenType(18),
+			"=":        TokenType(19),
+			">":        TokenType(20),
 		},
 	})
 	assert.NoError(t, err)
@@ -102,7 +103,7 @@ func TestTanna(t *testing.T) {
 			}
 		`
 
-	tokens, err := lexer.lex(strings.NewReader(input))
+	tokens, err := lexer.Lex(bufio.NewReader(strings.NewReader(input)))
 	assert.NoError(t, err)
 
 	lines := strings.Split(input, "\n")
@@ -148,7 +149,7 @@ func BenchmarkWord(b *testing.B) {
 	reader := strings.NewReader(`sout "Hello World!"`)
 
 	for i := 0; i < b.N; i++ {
-		_, err = lexer.lex(reader)
+		_, err = lexer.Lex(bufio.NewReader(reader))
 		if err != nil {
 			b.Error(err)
 		}

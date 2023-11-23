@@ -1,0 +1,129 @@
+# import math
+
+# Backticks just have to match the start count to close, that way we can avoid escaping
+
+# This will correlate with the common/ast.go file
+# Note how we use the struct's field name as the key
+parser {
+
+	# Local package, github link, or website link
+	Import {
+		example(`import $Value`)
+		example(`import $Value as $Alias`)
+	}
+
+	Struct {
+		example(`struct $Name ($Fields)`)
+	}
+
+	Interface {
+		example(`interface $Name `)
+	}
+
+	Field {
+		example(`$Name: $Type`)
+		example(`$Name: $Type = $DefaultValue`)
+	}
+
+	# Visibility will be determined by the first letter of the name
+	Function {
+		example(`fun $Name ($Parameters) -> $ReturnType $Body`)
+	}
+
+	Parameters {
+
+		# Settings will be defined in Syntax go struct
+	    settings {
+	    	separator(`,`)
+	    	surrounded_by(`()`)
+	    	allow_trailing_separator(false)
+	    }
+
+		example(`$Parameter`) # This can be a default example
+	}
+
+	Parameter {
+		example(`$Name: $Type`)
+	}
+
+	Math {
+		settings {
+			shunting_yard(true)
+		}
+	}
+
+}
+
+
+# In most cases Lexer will just need operators and keywords
+# lexer {
+#
+#    # Pop will be default
+#    EOF: pop()
+#
+#    # skip will be default
+#    WhiteSpace: skip()
+#
+#    # skip will be default
+#    NewLine: skip()
+#
+#    # Identifier, Char, String should be defaults, with an option for `none()`
+#    # By default, we should be able to just use `identifier()` which will be optimized
+#    ID: '[a-zA-Z][a-zA-Z0-9_]+'
+#
+#    Char: surround('\'')
+#
+#    # This can be optimized by default
+#    String: surround('"')
+#
+#    Number: '[0-9]+'
+#
+#    # Operators are in order of precedence
+#    Operators: ```
+#        , . ? ! + - * ^ / % == != < > <= >= && || = += -= /= %= ^= => ( ) [ ] { } :
+#    ```
+#
+#    # Deprecated: Keywords can be determined from the parser
+#    #Keywords: ````
+#    #    import
+#    #    fun struct impl trait object enum sealed
+#    #    and or xor shl shr ushr
+#    #    if else when while for in break continue
+#    #    true false null
+#    #    var val const
+#    #    async override operator inline static
+#    #   public internal private
+#    #````
+# }
+
+# Overloading is a thing
+# parser {
+#
+#     Main: Import | Struct | Trait | Declaration
+#
+#     Import: 'import' path:String
+#     Fields: name:String ':' type:ID (',' | '\n')*
+#     Struct: 'struct' name:ID '{' fields:Fields '}'
+#     Trait: 'trait' name:ID '{' fields:Fields '}'
+#
+#     Variable: Var | Val | Const
+#     Var: 'var' name:ID '=' value:Expr
+#     Val: 'val' name:ID '=' value:Expr
+#     Const: 'const' name:ID '=' value:Expr
+#
+#     Expr: Math
+#
+#     # Note, operators go through shunting yard before this step
+#     #Math: Sum | Sub | Mul | Div | Mod | Number | ID
+#     #Sum: left:Math '+' right:Math
+#     #Sub: left:Math '-' right:Math
+#     #Mul: left:Math '*' right:Math
+#     #Div: left:Math '/' right:Math
+#     #Mod: left:Math '%' right:Math
+#
+#     Value: ID | Char | String | Number | '(' Expr ')'
+# }
+#
+# test {
+#
+# }

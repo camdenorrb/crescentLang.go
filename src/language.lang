@@ -1,7 +1,13 @@
 lexer {
 
    # surroundDynamic tries to match the longest starting substring of the input then tries to pair it with the ending substring
-   Example: { surroundDynamic('`') }
+   String: {
+   		surround(`\``)
+   }
+
+   MultiLineString: {
+   		surround(`\`\`\``)
+   }
 
    # Deprecated: Can be determined from parser examples
    #Keywords: ```
@@ -10,24 +16,35 @@ lexer {
 
    # Operators are in order of precedence
    Operators: ```
-       { } ( ) : |
+       { } ( )
    ```
 
 }
 
 parser {
 
-    Main(Lexer | Parser | Test)
+	custom {
 
-    Lexer:
-    	'lexer' '{' examples:[]Example '}' |
-    	'lexer' example:Example
+		Lexer {
+			example(`lexer { examples:[Example] }`)
+		}
 
-    Parser:
-    	'parser' '{' examples:[]Example '}' |
-		'parser' example:Example
+		Parser {
+		     example(`parser { examples:[Example] }`)
+		}
 
- 	Test:
-		'test' '{' examples:[]Example '}'
+		Test {
+			example(`test { examples:[Example] }`)
+		}
+
+		Example {
+			example(`example(value:String)`)
+		}
+
+	}
+
+	programming {
+
+	}
 
 }
