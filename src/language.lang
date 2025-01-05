@@ -1,7 +1,11 @@
 lexer {
 
+   # skip will be default
+   # WhiteSpace: skip()
+
    # surroundDynamic tries to match the longest starting substring of the input then tries to pair it with the ending substring
    String: {
+   		escape(`\`)
    		surround(`\``)
    }
 
@@ -16,35 +20,63 @@ lexer {
 
    # Operators are in order of precedence
    Operators: ```
-       { } ( )
+       { } ( ) , * +
    ```
 
 }
 
-parser {
+# Types shared with sub parsers
+parser(Type) {
 
-	custom {
+	Example {
+        example(`example(value:String)`)
+    }
 
-		Lexer {
-			example(`lexer { examples:[Example] }`)
-		}
+    Parameters {
+    	settings {
+    		seperator(",")
+    	}
+    }
 
-		Parser {
-		     example(`parser { examples:[Example] }`)
-		}
-
-		Test {
-			example(`test { examples:[Example] }`)
-		}
-
-		Example {
-			example(`example(value:String)`)
-		}
-
+	Call {
+		example(`${name:Identifier}()`)
 	}
 
-	programming {
+}
 
+# Top scope
+parser(Main) {
+
+	Lexer {
+		example(`lexer { $body(Lexer) }`)
 	}
 
+	Parser {
+	     example(`parser { $body(Parser) }`)
+	     example(`parser($scope:Identifier) { $body(Parser) }`)
+	}
+
+	Test {
+		example(`test { $body(Test) }`)
+	}
+
+	example(Lexer*, Parser*, Test*)
+}
+
+parser(Lexer) {
+	example(Example*)
+}
+
+parser(Parser) {
+
+    Body {
+		example(`body($Parameters)`)
+	}
+
+	example(Example*)
+	example(Body*)
+}
+
+body(Test) {
+	example(Example*)
 }

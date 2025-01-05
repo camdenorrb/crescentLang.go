@@ -20,6 +20,19 @@ parser {
 		example(`interface $Name `)
 	}
 
+	Variable {
+
+		example(`val $Name: $Type`)
+		example(`val $Name: $Type = Value`)
+
+		example(`var $Name: $Type`) {
+			IsMutable = true
+		}
+		example(`var $Name: $Type = Value`) {
+			IsMutable = true
+		}
+	}
+
 	Field {
 		example(`$Name: $Type`)
 		example(`$Name: $Type = $DefaultValue`)

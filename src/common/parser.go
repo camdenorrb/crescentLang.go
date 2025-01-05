@@ -5,7 +5,7 @@ import (
 	"github.com/joomcode/errorx"
 )
 
-type ParserMode uint
+//type ParserType uint
 
 /*
 const (
@@ -25,12 +25,8 @@ type Pattern struct {
 }
 
 type Parser struct {
-	Syntax           *Syntax
-	Patterns         map[ParserMode][]Pattern
-	Mode             ParserMode
-	matchingPatterns []Pattern // TODO: Inline
-	tokenCache       []Token   // TODO: Inline
-	index            int       // TODO: Inline
+	Syntax   *Syntax
+	Patterns []Pattern
 }
 
 /*
@@ -51,57 +47,62 @@ type Converter struct {
 // TODO: Error result should have the line and column number
 func (p *Parser) Parse(tokens []Token) ([]Node, error) {
 
-	var nodes []Node
+	matchingPatterns := p.Patterns
 
-	p.matchingPatterns = p.Patterns[p.Mode]
+	var nodes []Node
+	var tokenCache []Token
+	var index int
 
 	for _, token := range tokens {
 
-		p.tokenCache = append(p.tokenCache, token)
+		tokenCache = append(tokenCache, token)
 
 		var validPatterns []Pattern
 
-		for _, pattern := range p.matchingPatterns {
+		for _, pattern := range matchingPatterns {
 
-			if len(pattern.Tokens) <= p.index || !pattern.Tokens[p.index].Contains(token.Type) {
+			// If the pattern is longer than the token cache or the token type is not valid for the pattern
+			if len(pattern.Tokens) <= index || !pattern.Tokens[index].Contains(token.Type) {
 				continue
 			}
 
 			validPatterns = append(validPatterns, pattern)
 		}
 
-		p.matchingPatterns = validPatterns
+		matchingPatterns = validPatterns
 
-		if len(p.matchingPatterns) == 1 && len(p.matchingPatterns[0].Tokens) == len(p.tokenCache) {
+		// If only one pattern matches and the pattern is complete
+		if len(matchingPatterns) == 1 && len(matchingPatterns[0].Tokens) == len(tokenCache) {
 
-			node, err := p.matchingPatterns[0].Parser(p, p.tokenCache)
+			node, err := matchingPatterns[0].Parser(p, tokenCache)
 			if err != nil {
-				return nil, err
+				return nil, errorx.IllegalState.Wrap(err, "Failed to parse")
 			}
 
 			nodes = append(nodes, node)
-			p.matchingPatterns = p.Patterns[p.Mode]
-			p.tokenCache = nil
+
+			matchingPatterns = p.Patterns // Reset
+			tokenCache = tokenCache[:0]   // Clear
 		}
 
-		if len(p.matchingPatterns) == 0 {
-			return nil, errorx.IllegalState.New("No matching patterns for %+v", p.tokenCache)
+		if len(matchingPatterns) == 0 {
+			return nil, errorx.IllegalState.New("No matching patterns for %+v", tokenCache)
 		}
 
-		p.index++
+		index++
 	}
 
-	if (len(p.matchingPatterns) > 1 && len(p.tokenCache) > 1) || (len(p.matchingPatterns) == 1 && len(p.matchingPatterns[0].Tokens) != len(p.tokenCache)) {
-		return nil, errorx.IllegalState.New("Ambiguous patterns for %+v", p.tokenCache)
+	// If there are multiple matching patterns or there is only one matching pattern but the pattern is not complete
+	if (len(matchingPatterns) > 1 && len(tokenCache) > 1) || (len(matchingPatterns) == 1 && len(matchingPatterns[0].Tokens) != len(tokenCache)) {
+		return nil, errorx.IllegalState.New("Ambiguous patterns for %+v", tokenCache)
 	}
 
-	if len(p.matchingPatterns) == 1 {
+	// If there is only one matching pattern and the pattern is complete
+	if len(matchingPatterns) == 1 && len(matchingPatterns[0].Tokens) == len(tokenCache) {
 
-		pattern := p.matchingPatterns[0]
-
-		node, err := pattern.Parser(p, p.tokenCache)
+		node, err := matchingPatterns[0].Parser(p, tokenCache)
 		if err != nil {
-			return nil, err
+			return nil, errorx.IllegalState.Wrap(err, "Failed to parse")
 		}
 
 		nodes = append(nodes, node)

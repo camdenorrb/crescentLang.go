@@ -3,8 +3,6 @@ package crescent
 import (
 	"crescentLang/common"
 	mapset "github.com/deckarep/golang-set/v2"
-	"github.com/moznion/go-optional"
-	"go/ast"
 )
 
 // TODO: Maybe a parser combinator (Bunch of small parsers making a bigger one)
@@ -25,7 +23,7 @@ var Patterns = map[common.ParserMode][]common.Pattern{
 				mapset.NewSet(CURLYL),
 			},
 			Parser: func(p *common.Parser, i []common.Token) (common.Node, error) {
-				p.
+				return nil, nil
 			},
 		},
 	},

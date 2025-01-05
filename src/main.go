@@ -25,18 +25,19 @@ func main() {
 		panic(err)
 	}
 
-	//for _, token := range tokens {
-	//	fmt.Println(token.Type, token.Value)
+	for _, token := range tokens {
+		fmt.Println(token.Type, token.Value)
+	}
+
+	//parsed, err := crescent.Parse(tokens)
+	//if err != nil {
+	//	panic(err)
 	//}
 
-	parsed, err := crescent.Parse(tokens)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, node := range parsed {
-		fmt.Printf("%+v\n", node)
-	}
+	/*
+		for _, node := range parsed {
+			fmt.Printf("%+v\n", node)
+		}*/
 
 	/*
 		fmt.Println(unicode.IsNumber('1'))

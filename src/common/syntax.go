@@ -22,6 +22,6 @@ type Syntax struct {
 }
 
 type MultiLineCommentSyntax struct {
-	MultilineCommentStart string
-	MultilineCommentEnd   string
+	Start string
+	End   string
 }

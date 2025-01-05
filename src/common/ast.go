@@ -13,20 +13,16 @@ type Type interface{}
 
 type Visibility string
 
+type Parameters []Parameter
+
 type Import struct {
 	Value string
 	Alias string
 }
 
 type Struct struct {
-	Name   string
-	Fields []Parameter
-}
-
-// If the language doesn't have structs
-type Class struct {
 	Name      string
-	Fields    []Parameter
+	Fields    Parameters
 	Variables []Variable
 	Functions []Function
 }
@@ -72,8 +68,9 @@ type Operation struct {
 }
 
 type Call struct {
-	Next Node
 	Name string
+	Args []Node
+	Next Node
 }
 
 type ArrayType struct {
