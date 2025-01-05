@@ -20,9 +20,20 @@ const (
 // Meaning that for each index there can be multiple valid token types
 type Pattern struct {
 	Name   string
-	Parser func(*Parser, []Token) (Node, error) // Can be nil, if nil then the node is automatically generated
+	Parser func(*Parser, []Token) (Node, ParserMode, error) // Can be nil, if nil then the node is automatically generated
 	Tokens []mapset.Set[TokenType]
 }
+
+/*
+
+
+var MethodFeature = FeatureParser(
+	AllowedInBody: [
+		ExprFeature,
+		StatementFeature,
+	]
+)
+*/
 
 type Parser struct {
 	Syntax   *Syntax
@@ -43,6 +54,11 @@ type Converter struct {
 */
 
 // The registered pattern parsers should control the Parser state
+
+func (p *Parser) SetNextMode(mode ParserMode) {
+	p.Mode = mode
+	p.matchingPatterns = p.Patterns[mode]
+}
 
 // TODO: Error result should have the line and column number
 func (p *Parser) Parse(tokens []Token) ([]Node, error) {
@@ -74,7 +90,7 @@ func (p *Parser) Parse(tokens []Token) ([]Node, error) {
 		// If only one pattern matches and the pattern is complete
 		if len(matchingPatterns) == 1 && len(matchingPatterns[0].Tokens) == len(tokenCache) {
 
-			node, err := matchingPatterns[0].Parser(p, tokenCache)
+			node, nextMode, err := matchingPatterns[0].Parser(p, tokenCache)
 			if err != nil {
 				return nil, errorx.IllegalState.Wrap(err, "Failed to parse")
 			}
@@ -100,12 +116,16 @@ func (p *Parser) Parse(tokens []Token) ([]Node, error) {
 	// If there is only one matching pattern and the pattern is complete
 	if len(matchingPatterns) == 1 && len(matchingPatterns[0].Tokens) == len(tokenCache) {
 
-		node, err := matchingPatterns[0].Parser(p, tokenCache)
+		node, nextMode, err := matchingPatterns[0].Parser(p, tokenCache)
 		if err != nil {
 			return nil, errorx.IllegalState.Wrap(err, "Failed to parse")
 		}
 
 		nodes = append(nodes, node)
+
+		if nextMode != p.Mode {
+			p.SetNextMode(nextMode)
+		}
 	}
 
 	return nodes, nil

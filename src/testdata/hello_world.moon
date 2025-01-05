@@ -1,4 +1,3 @@
-fun main {
-    println("Hello World")
-    println("Hello World")
-}
+fun main { // Function Start
+    println("Hello World") // Method call
+} // Function End
