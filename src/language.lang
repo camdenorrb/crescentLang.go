@@ -33,9 +33,9 @@ parser(Type) {
     }
 
     Parameters {
-    	settings {
-    		seperator(",")
-    	}
+        settings {
+                separator(",")
+        }
     }
 
 	Call {
